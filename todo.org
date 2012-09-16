@@ -1,0 +1,14 @@
+#+TITLE: What needs to be done for 4chess implementation
+
+* pieces
+** DONE Pawn
+** DONE Rook
+** DONE Queen
+** DONE Bishop
+** TODO Knight
+
+* GUI
+
+* etc
+** PlayerID
+   - should be its own class with __str__ and __int__ function such that it can be printed as "black" etc.
