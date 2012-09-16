@@ -111,6 +111,43 @@ class Queen(DecideAndContinuePiece):
     def __str__(self):
         return "Queen(" + str(self.owner)+ ") at " + str(self.position)
 
+class KnightLike(Piece):
+    """
+    Nightlike pieces have a set of move orders that they can do.
+    Like knights, they can ignore other pieces on the nodes they pass.
+    This set must defined in the constructor as self.move_orders
+    """
+    def get_possible_moves(self):
+        retval = []
+        for mo in self.move_orders:
+            retval.extend(self.do_move_order(self.position, mo))
+        return retval
+
+    def do_move_order(self, current_node, move_order):
+        mo = list(move_order)
+        d = mo.pop(0)
+        if len(mo)==0:
+            return filter(lambda x: x.piece is None or x.piece.owner is not self.owner, current_node.get_next_nodes(self.owner, d))
+        retval = []
+        for n in current_node.get_next_nodes(self.owner, d):
+            retval.extend(self.do_move_order(n, mo))
+        return retval
+
+class Knight(KnightLike):
+    def __init__(self, playerID, position):
+        Piece.__init__(self, playerID, position)
+        self.move_orders = [['n','n','w'],
+                            ['n','n','e'],
+                            ['s','s','w'],
+                            ['s','s','e'],
+                            ['e','e','n'],
+                            ['e','e','s'],
+                            ['w','w','n'],
+                            ['w','w','s']]
+
+    def __str__(self):
+        return "Knight(" + str(self.owner)+ ") at " + str(self.position)
+
 class Player:
     def __init__(self, playerID):
         self.playerID = playerID
@@ -291,15 +328,25 @@ class TwoChessGenerator:
         king = King(playerID, nodes[(playerID,4,0)])
         nodes[(playerID,4,0)].piece = king
         pieces.append(king)
+
         queen = Queen(playerID, nodes[(playerID, 3,0)])
         nodes[(playerID, 3,0)].piece = queen
         pieces.append(queen)
+
         bishop1 = Bishop(playerID, nodes[(playerID,2,0)])
         nodes[(playerID,2,0)].piece = bishop1
         pieces.append(bishop1)
         bishop2 = Bishop(playerID, nodes[(playerID,5,0)])
         nodes[(playerID,5,0)].piece = bishop2
         pieces.append(bishop2)
+
+        knight1 = Knight(playerID, nodes[(playerID,1,0)])
+        nodes[(playerID,1,0)].piece = knight1
+        pieces.append(knight1)
+        knight2 = Knight(playerID, nodes[(playerID,6,0)])
+        nodes[(playerID,6,0)].piece = knight2
+        pieces.append(knight2)
+
         rook1 = Rook(playerID, nodes[(playerID,0,0)])
         nodes[(playerID,0,0)].piece = rook1
         pieces.append(rook1)
