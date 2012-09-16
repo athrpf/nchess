@@ -1,6 +1,7 @@
 
 
 all_directions = ('e','ne','n','nw','w','sw','s','se')
+direction_map = {'e':0 , 'ne':1, 'n': 2, 'nw':3, 'w':4, 'sw':5, 's':6, 'se':7}
 
 class Node:
     def __init__(self, playerID, nodeID):
@@ -12,10 +13,15 @@ class Node:
         self.piece = None
 
     def get_next_nodes(self, moving_playerID, direction):
+        if isinstance(direction, list):
+            retval = []
+            for d in direction:
+                retval.extend(self.get_next_nodes(moving_playerID, d))
+            return retval
         if moving_playerID==self.owner:
             return self.neighbors[direction]
         else:
-            return self.neighbors[(direction+4)%8]
+            return self.neighbors[all_directions[(direction_map[direction]+4)%8]]
 
     def print_full(self, str):
         s  = "Node " + str(self.nodeID) + " owned by player " + str(self.owner) + "\n"
@@ -34,22 +40,76 @@ class Piece:
     def __init__(self, playerID, position):
         self.owner = playerID
         self.position = position
-
+        self.history  = [position]
+        self.alive    = True
 
 class King(Piece):
     def get_possible_moves(self):
         retval = []
         for d in all_directions:
-            retval.extend(self.position.get_next_nodes(self.owner, d))
+            retval.extend(filter(lambda x: x.piece is None,  self.position.get_next_nodes(self.owner, d)))
         return retval
 
     def __str__(self):
-        s = "King at " + str(self.position)
-        return s
+        return "King(" + str(self.owner)+ ") at " + str(self.position)
 
 class Pawn(Piece):
     def get_possible_moves(self):
-        raise NotImplementedError()
+        retval = []
+        onestep = filter(lambda x: x.piece is None,  self.position.get_next_nodes(self.owner, 'n'))
+        retval.extend(onestep)
+        retval.extend(filter(lambda x: x.piece is not None and x.piece.owner is not self.owner, self.position.get_next_nodes(self.owner, ['nw','ne'])))
+        if len(self.history)==1:
+            for s in onestep:
+                retval.extend(filter(lambda x: x.piece is None,  s.get_next_nodes(self.owner, 'n')))
+        return retval
+
+    def __str__(self):
+        return "Pawn(" + str(self.owner)+ ") at " + str(self.position)
+
+class DecideAndContinuePiece(Piece):
+    def get_possible_moves(self):
+        retval = []
+        directiondict = {}
+        for d in self.initial_directions:
+            firststep = filter(lambda x: x.piece is None or x.piece.owner is not self.owner, self.position.get_next_nodes(self.owner, d))
+            directiondict[d] = firststep
+            retval.extend(firststep)
+            for s in filter(lambda x: x.piece is None, firststep):
+                retval.extend(self.continue_step(s, d))
+        return retval
+
+    def continue_step(self, current_node, direction):
+        nextstep = filter(lambda x: x.piece is None or x.piece.owner is not self.owner, current_node.get_next_nodes(self.owner, direction))
+        retval = []
+        for n in filter(lambda x: x.piece is None, nextstep):
+            retval.extend(self.continue_step(n, direction))
+        retval.extend(nextstep)
+        return retval
+
+class Bishop(DecideAndContinuePiece):
+    def __init__(self, playerID, position):
+        Piece.__init__(self, playerID, position)
+        self.initial_directions = ['nw','ne','sw','se']
+
+    def __str__(self):
+        return "Bishop(" + str(self.owner)+ ") at " + str(self.position)
+
+class Rook(DecideAndContinuePiece):
+    def __init__(self, playerID, position):
+        Piece.__init__(self, playerID, position)
+        self.initial_directions = ['n','s','e','w']
+
+    def __str__(self):
+        return "Rook(" + str(self.owner)+ ") at " + str(self.position)
+
+class Queen(DecideAndContinuePiece):
+    def __init__(self, playerID, position):
+        Piece.__init__(self, playerID, position)
+        self.initial_directions = all_directions
+
+    def __str__(self):
+        return "Queen(" + str(self.owner)+ ") at " + str(self.position)
 
 class Player:
     def __init__(self, playerID):
@@ -131,7 +191,6 @@ class Game:
         self.move_list = list(self.players)
         self.move_decision_list = list(self.players)
         self.n_players = len(self.players)
-        self.killed_pieces = []
         self.game_over = False
         self.winner = None
 
@@ -167,22 +226,18 @@ class Game:
         assert(p==move.start.piece)
         move.start.piece = None
         p.position = move.end
+        p.history.append(move.end)
         if isinstance(move.end.piece, King):
             return True
         if move.end.piece is not None:
-            self.killed_pieces.append(move.end.piece)
+            move.end.piece.alive = False
         move.end.piece = p
         return False
 
     def get_pieces(self, playerID=None):
         if playerID is None:
-            return self.pieces
-        retval = []
-        for p in self.pieces:
-            if p.owner == playerID:
-                retval.append(p)
-        return retval
-
+            return filter(lambda x: x.alive, self.pieces)
+        return filter(lambda x: x.owner==playerID and x.alive, self.pieces)
 
     def __str__(self):
         s = ""
@@ -236,6 +291,27 @@ class TwoChessGenerator:
         king = King(playerID, nodes[(playerID,4,0)])
         nodes[(playerID,4,0)].piece = king
         pieces.append(king)
+        queen = Queen(playerID, nodes[(playerID, 3,0)])
+        nodes[(playerID, 3,0)].piece = queen
+        pieces.append(queen)
+        bishop1 = Bishop(playerID, nodes[(playerID,2,0)])
+        nodes[(playerID,2,0)].piece = bishop1
+        pieces.append(bishop1)
+        bishop2 = Bishop(playerID, nodes[(playerID,5,0)])
+        nodes[(playerID,5,0)].piece = bishop2
+        pieces.append(bishop2)
+        rook1 = Rook(playerID, nodes[(playerID,0,0)])
+        nodes[(playerID,0,0)].piece = rook1
+        pieces.append(rook1)
+        rook2 = Rook(playerID, nodes[(playerID,7,0)])
+        nodes[(playerID,7,0)].piece = rook2
+        pieces.append(rook2)
+
+        for c in cols:
+            pawn = Pawn(playerID, nodes[(playerID,c,1)])
+            pieces.append(pawn)
+            nodes[(playerID,c,1)].piece = pawn
+
         player = ConsolePlayer(playerID)
         return nodes, pieces, player
 
