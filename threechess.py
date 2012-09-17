@@ -282,18 +282,18 @@ class Game:
             s += str(n)
         return s
 
-def joindicts(dict1, dict2):
+def joindicts(dictlist):
     retval = {}
-    for (k,v) in dict1.iteritems():
-        retval[k] = v
-    for (k,v) in dict2.iteritems():
-        retval[k] = v
+    for dicti in dictlist:
+        for (k,v) in dicti.iteritems():
+            retval[k] = v
     return retval
 
-class TwoChessGenerator:
-    def __init__(self, number_of_rows=4, number_of_columns=8):
+class NChessGenerator:
+    def __init__(self, number_of_players=3, number_of_rows=4, number_of_columns=8):
         self.n_rows = number_of_rows
         self.n_cols = number_of_columns
+        self.n_players = number_of_players
 
     def generate_halfboard(self, playerID):
         rows = range(self.n_rows)
@@ -378,18 +378,21 @@ class TwoChessGenerator:
                 board2[(playerID2, self.n_cols/2-c, self.n_rows-1)].neighbors['nw'].append(board1[(playerID1, c+self.n_cols/2+1, self.n_rows-1)])
 
     def generate(self):
-        nodes0, pieces0, player0 = self.generate_halfboard(playerID=0)
-        nodes1, pieces1, player1 = self.generate_halfboard(playerID=1)
-        self.glue_halfboards(nodes0, 0, nodes1, 1)
-        self.glue_halfboards(nodes1, 1, nodes0, 0)
-        nodes = joindicts(nodes0, nodes1)
-        pieces = list(pieces0)
-        pieces.extend(pieces1)
-        players = [player0, player1]
+        nodeslist = []
+        pieces = []
+        players = []
+        for p in range(self.n_players):
+            n, pi, pl = self.generate_halfboard(playerID=p)
+            nodeslist.append(n)
+            pieces.extend(pi)
+            players.append(pl)
+        for p in range(self.n_players):
+            self.glue_halfboards(nodeslist[p-1], players[p-1].playerID, nodeslist[p], players[p].playerID)
+        nodes = joindicts(nodeslist)
         return nodes, pieces, players
 
 if __name__=='__main__':
-    generator = TwoChessGenerator()
+    generator = NChessGenerator()
     game = Game(generator)
     f = open('output.txt', 'w')
     f.write(str(game))
