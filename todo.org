@@ -5,10 +5,13 @@
 ** DONE Rook
 ** DONE Queen
 ** DONE Bishop
-** TODO Knight
+** DONE Knigoht
 
 * GUI
-
+** TODO color for pieces
 * etc
-** PlayerID
+** TODO PlayerID
    - should be its own class with __str__ and __int__ function such that it can be printed as "black" etc.
+* AI
+** Implement random player
+** Implement feature based SVM player
