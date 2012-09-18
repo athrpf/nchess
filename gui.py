@@ -128,8 +128,8 @@ class GuiNChessGenerator(thc.NChessGenerator):
         nodeslist = []
         pieces = []
         players = []
-        for p in range(self.n_players):
-            n, pi, pl = self.generate_halfboard(playerID=p)
+        for p,ptype in zip(range(self.n_players), self.player_type_list):
+            n, pi, pl = self.generate_halfboard(playerID=p, PlayerType=ptype)
             nodeslist.append(n)
             pieces.extend(pi)
             players.append(pl)
@@ -152,11 +152,11 @@ class GuiGame(thc.Game):
             h.plot(color)
         plt.savefig(filename)
 
-    def play(self):
+    def play(self, max_moves=100):
         turn_idx = 0
-        while not self.game_over:
+        while not self.game_over and turn_idx < max_moves:
             turn_idx += 1
-            filename = 'board' + str(turn_idx) + '.png'
+            filename = ('board%.3d.png' % turn_idx) #.format( turn_idx)
             self.play_next_move()
             self.print_board(filename)
         return self.winner

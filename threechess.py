@@ -250,9 +250,13 @@ class Game:
         if self.game_over:
             self.winner = mover
 
-    def play_game(self):
+    def play(self, max_moves=None):
+        move_counter = 0
         while not self.game_over:
             self.play_next_move()
+            move_counter+=1
+            if max_moves is not None and move_counter>max_moves:
+                break
         return self.winner
 
     def make_move(self, move):
@@ -290,12 +294,16 @@ def joindicts(dictlist):
     return retval
 
 class NChessGenerator:
-    def __init__(self, number_of_players=3, number_of_rows=4, number_of_columns=8):
+    def __init__(self, number_of_players=3, number_of_rows=4, number_of_columns=8, player_type_list=None):
         self.n_rows = number_of_rows
         self.n_cols = number_of_columns
         self.n_players = number_of_players
+        if player_type_list is None:
+            self.player_type_list = [ ConsolePlayer]*self.n_players
+        else:
+            self.player_type_list = player_type_list
 
-    def generate_halfboard(self, playerID):
+    def generate_halfboard(self, playerID, PlayerType=ConsolePlayer):
         rows = range(self.n_rows)
         cols = range(self.n_cols)
         nodes = {}
@@ -358,8 +366,7 @@ class NChessGenerator:
             pawn = Pawn(playerID, nodes[(playerID,c,1)])
             pieces.append(pawn)
             nodes[(playerID,c,1)].piece = pawn
-
-        player = ConsolePlayer(playerID)
+        player = PlayerType(playerID)
         return nodes, pieces, player
 
     def glue_halfboards(self, board1, playerID1, board2, playerID2):
@@ -381,8 +388,8 @@ class NChessGenerator:
         nodeslist = []
         pieces = []
         players = []
-        for p in range(self.n_players):
-            n, pi, pl = self.generate_halfboard(playerID=p)
+        for p,ptype in zip(range(self.n_players), self.player_type_list):
+            n, pi, pl = self.generate_halfboard(playerID=p, PlayerType=ptype)
             nodeslist.append(n)
             pieces.extend(pi)
             players.append(pl)
@@ -397,5 +404,5 @@ if __name__=='__main__':
     f = open('output.txt', 'w')
     f.write(str(game))
     f.close()
-    winner = game.play_game()
+    winner = game.play()
     print "The winner is " , winner
