@@ -3,6 +3,41 @@
 all_directions = ('e','ne','n','nw','w','sw','s','se')
 direction_map = {'e':0 , 'ne':1, 'n': 2, 'nw':3, 'w':4, 'sw':5, 's':6, 'se':7}
 
+class PlayerID:
+    """
+    A playerID fully identifies a player.
+    It is useful, if more information about a player is necessary, but not
+    the player object itself.
+    It can be compared to an int.
+    """
+    def __init__(self, intID, color=None, name=None, plt_color=None):
+        self.id = intID
+        self.color = color
+        self.name = name
+        self.plt_color = plt_color
+
+    def __str__(self):
+        if self.name is not None:
+            return self.name
+        if self.color is not None:
+            return self.color
+        return "Player " +str(self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.id==other
+        if isinstance(other, PlayerID):
+            return self.id==other.id
+
+    def __gt__(self, other):
+        return self.id>other.id
+
+    def __ge__(self, other):
+        return self.id>=other.id
+
+    def __hash__(self):
+        return self.id
+
 class Node:
     def __init__(self, playerID, nodeID):
         self.nodeID = nodeID
@@ -309,7 +344,7 @@ class NChessGenerator:
         nodes = {}
         for r in rows:
             for c in cols:
-                nodes[(playerID, c, r)] = Node(playerID, (playerID, c, r))
+                nodes[(playerID, c, r)] = Node(playerID, (playerID.id, c, r))
         for c in cols:
             for r in rows:
                 if c<(self.n_cols-1):
@@ -382,13 +417,18 @@ class NChessGenerator:
             board2[(playerID2, self.n_cols/2-c-1, self.n_rows-1)].neighbors['ne'].append(board1[(playerID1, c+self.n_cols/2-1, self.n_rows-1)])
             if c<(self.n_cols/2-1):
                 board1[(playerID1, c+self.n_cols/2, self.n_rows-1)].neighbors['ne'].append(board2[(playerID2, self.n_cols/2-c-2, self.n_rows-1)])
-                board2[(playerID2, self.n_cols/2-c, self.n_rows-1)].neighbors['nw'].append(board1[(playerID1, c+self.n_cols/2+1, self.n_rows-1)])
+                board2[(playerID2, self.n_cols/2-c-1, self.n_rows-1)].neighbors['nw'].append(board1[(playerID1, c+self.n_cols/2+1, self.n_rows-1)])
+
+    def generate_playerIDs(self):
+        colorlist = ['black', 'brown', 'beige', 'white']
+        plt_colorlist = ['k','b','g','y']
+        return [PlayerID(i,color=c,plt_color=pc) for i, c, pc in zip(range(self.n_players), colorlist, plt_colorlist)]
 
     def generate(self):
         nodeslist = []
         pieces = []
         players = []
-        for p,ptype in zip(range(self.n_players), self.player_type_list):
+        for p,ptype in zip(self.generate_playerIDs(), self.player_type_list):
             n, pi, pl = self.generate_halfboard(playerID=p, PlayerType=ptype)
             nodeslist.append(n)
             pieces.extend(pi)

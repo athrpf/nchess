@@ -28,18 +28,19 @@ class Rectangle:
             draw_piece(self.node.piece, (self.x1+self.x2+ self.x3+self.x4)/4.)
 
 def draw_piece(piece, center):
+    color = piece.owner.plt_color
     if isinstance(piece, thc.King):
-        plt.text(center[0], center[1], 'K')
+        plt.text(center[0], center[1], 'K', color=color)
     elif isinstance(piece, thc.Queen):
-        plt.text(center[0], center[1], 'Q')
+        plt.text(center[0], center[1], 'Q', color=color)
     elif isinstance(piece, thc.Bishop):
-        plt.text(center[0], center[1], 'B')
+        plt.text(center[0], center[1], 'B', color=color)
     elif isinstance(piece, thc.Knight):
-        plt.text(center[0], center[1], 'S')
+        plt.text(center[0], center[1], 'S', color=color)
     elif isinstance(piece, thc.Rook):
-        plt.text(center[0], center[1], 'R')
+        plt.text(center[0], center[1], 'R', color=color)
     elif isinstance(piece, thc.Pawn):
-        plt.text(center[0], center[1], 'P')
+        plt.text(center[0], center[1], 'P', color=color)
 
 
 class CornerBoard(Rectangle):
@@ -128,12 +129,12 @@ class GuiNChessGenerator(thc.NChessGenerator):
         nodeslist = []
         pieces = []
         players = []
-        for p,ptype in zip(range(self.n_players), self.player_type_list):
+        for p,ptype in zip(self.generate_playerIDs(), self.player_type_list):
             n, pi, pl = self.generate_halfboard(playerID=p, PlayerType=ptype)
             nodeslist.append(n)
             pieces.extend(pi)
             players.append(pl)
-            self.gui_halfboards[p].connect_nodes(n)
+            self.gui_halfboards[p.id].connect_nodes(n)
         for p in range(self.n_players):
             self.glue_halfboards(nodeslist[p-1], players[p-1].playerID, nodeslist[p], players[p].playerID)
         nodes = thc.joindicts(nodeslist)
