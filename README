@@ -1,0 +1,20 @@
+NChess
+
+NChess is a python implementation of chess for an arbitrary number of players.
+There is no GUI, yet.
+To play, just type
+
+python threechess.py
+
+and you can play at the command prompt.
+To get a graphical representation of the board after each move, use
+
+python gui.py
+
+which will save the board to a file called board{move_number}.png after each
+move.
+If don't want to play yourself, you can watch the computer do so, using
+
+python aiplayer.py
+
+Right now, this will just instantiate a number of players with random moves.
