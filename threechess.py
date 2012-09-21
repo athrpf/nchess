@@ -420,8 +420,8 @@ class NChessGenerator:
                 board2[(playerID2, self.n_cols/2-c-1, self.n_rows-1)].neighbors['nw'].append(board1[(playerID1, c+self.n_cols/2+1, self.n_rows-1)])
 
     def generate_playerIDs(self):
-        colorlist = ['black', 'brown', 'beige', 'white']
-        plt_colorlist = ['k','b','g','y']
+        colorlist = ['red', 'green', 'yellow', 'blue']
+        plt_colorlist = colorlist#['k','b','g','y']
         return [PlayerID(i,color=c,plt_color=pc) for i, c, pc in zip(range(self.n_players), colorlist, plt_colorlist)]
 
     def generate(self):

@@ -24,7 +24,7 @@ class RandomPlayer:
         return "Random Player " + str(self.playerID)
 
 if __name__=='__main__':
-    generator = gui.GuiNChessGenerator(player_type_list=[RandomPlayer]*3)
+    generator = gui.GuiNChessGenerator(number_of_players=4, player_type_list=[RandomPlayer]*4)
     game = gui.GuiGame(generator)
     game.set_halfboards(generator)
     winner = game.play(max_moves=100)

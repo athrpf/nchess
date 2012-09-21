@@ -5,6 +5,7 @@ This module is for testing how to plot a board
 import numpy as np
 import cmath
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 
 import threechess as thc
 
@@ -12,18 +13,27 @@ def plot_line(x1, x2, args):
     plt.plot(np.array([x1[0],x2[0]]), np.array([x1[1],x2[1]]), args)
 
 class Rectangle:
-    def __init__(self, x1, x2, x3, x4):
+    def __init__(self, x1, x2, x3, x4, face_color=None):
         self.x1 = x1
         self.x2 = x2
         self.x3 = x3
         self.x4 = x4
         self.node = None
+        self.face_color = face_color
 
     def plot(self, color='k'):
-        plot_line(self.x1,self.x2, color)
-        plot_line(self.x2,self.x3, color)
-        plot_line(self.x3,self.x4, color)
-        plot_line(self.x4,self.x1, color)
+        if self.face_color is not None:
+            xy = np.array([[self.x1[0], self.x1[1]],
+                             [self.x2[0], self.x2[1]],
+                             [self.x3[0], self.x3[1]],
+                             [self.x4[0], self.x4[1]]])
+            pol = Polygon(xy, facecolor=self.face_color)
+            plt.gca().add_artist(pol)
+        else:
+            plot_line(self.x1,self.x2, color)
+            plot_line(self.x2,self.x3, color)
+            plot_line(self.x3,self.x4, color)
+            plot_line(self.x4,self.x1, color)
         if self.node and self.node.piece:
             draw_piece(self.node.piece, (self.x1+self.x2+ self.x3+self.x4)/4.)
 
@@ -56,7 +66,7 @@ class CornerBoard(Rectangle):
         Rectangle.__init__(self, x1, x2, x3, x4)
         self.rectangles = []
 
-    def rectanglify(self, n_intervals_x=4, n_intervals_y=4):
+    def rectanglify(self, n_intervals_x=4, n_intervals_y=4, coloring_start=0):
         """
         generate sub-rectangles for this cornerboard.
         The rectangles are stored in the list self.rectangles.
@@ -67,13 +77,21 @@ class CornerBoard(Rectangle):
         """
         points1 = [float(k)/n_intervals_x*self.x1+float(n_intervals_x-k)/n_intervals_x*self.x4 for k in range(n_intervals_x+1)]
         points2 = [float(k)/n_intervals_x*self.x2+float(n_intervals_x-k)/n_intervals_x*self.x3 for k in range(n_intervals_x+1)]
+        def alternating_color():
+            while True:
+                yield 'k'
+                yield 'w'
+        face_color = alternating_color()
+        if coloring_start:
+            face_color.next()
         for k in range(n_intervals_x):
+            face_color.next()
             for j in range(n_intervals_y):
                 p1 = points1[k]*float(j)/n_intervals_y + points2[k]*float(n_intervals_y-j)/n_intervals_y
                 p2 = points1[k]*float(j+1)/n_intervals_y + points2[k]*float(n_intervals_y-j-1)/n_intervals_y
                 p3 = points1[k+1]*float(j+1)/n_intervals_y + points2[k+1]*float(n_intervals_y-j-1)/n_intervals_y
                 p4 = points1[k+1]*float(j)/n_intervals_y + points2[k+1]*float(n_intervals_y-j)/n_intervals_y
-                self.rectangles.append(Rectangle(p1, p2, p3, p4))
+                self.rectangles.append(Rectangle(p1, p2, p3, p4, face_color=face_color.next()))
 
     def plot(self, color='k'):
         Rectangle.plot(self, color)
@@ -116,8 +134,13 @@ def generate_halfboards(n_players=3):
         midpoints.append(0.5*(cornerpoints[k] + cornerpoints[k+1]))
     # 2. create cornerboards
     cornerboards = [CornerBoard(cornerpoints[k-1], midpoints[k], np.zeros(2), midpoints[k-1]) for (k,c) in enumerate(cornerpoints)]
+    def alternating_coloring_start():
+        while True:
+            yield 0
+            yield 1
+    alt_start = alternating_coloring_start()
     for c in cornerboards:
-        c.rectanglify()
+        c.rectanglify(coloring_start=alt_start.next())
     halfboards = []
     for p in range(n_players):
         halfboards.append(HalfBoard(cornerboards[2*p], cornerboards[2*p+1], p))
@@ -148,7 +171,7 @@ class GuiGame(thc.Game):
         plt.hold(False)
         plt.plot(0., 0., 'x')
         plt.hold(True)
-        colorlist = ['k', 'y', 'b']
+        colorlist = [p.playerID.color for p in self.players]
         for h, color in zip(self.halfboards, colorlist):
             h.plot(color)
         plt.savefig(filename)
@@ -166,7 +189,7 @@ class GuiGame(thc.Game):
 
 def test_plot_board():
     halfboards = generate_halfboards()
-    colorlist = ['k', 'y', 'b']
+    colorlist = ['k', 'y', 'b','r']
     for (h,color) in zip(halfboards, colorlist):
         h.plot(color)
     plt.show()
